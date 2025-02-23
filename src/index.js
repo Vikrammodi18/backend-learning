@@ -4,7 +4,7 @@ const app = require('./app.js')
 
 const connectDB = require("./db/index.js");
 const port = process.env.PORT || 8000
-console.log("hello")
+
 connectDB()
 .then(()=>{
     app.listen(port,()=>{
