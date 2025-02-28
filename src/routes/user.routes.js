@@ -1,9 +1,10 @@
 const {Router} = require("express")
 const upload = require('../middlewares/multer.middleware.js')
-const{ registerUser,loginUser,logoutUser} = require("../controllers/user.controller.js")
+const{ registerUser,loginUser,logoutUser,homeRoute} = require("../controllers/user.controller.js")
 const{verifyJWT} = require("../middlewares/auth.middleware.js")
 const router = Router()
 
+router.route('/').get(homeRoute)
 router.route('/register').post(
     upload.fields([
         {

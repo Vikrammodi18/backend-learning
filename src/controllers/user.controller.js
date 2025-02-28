@@ -18,6 +18,11 @@ const generateAccessAndRefreshToken = async (userId)=>{
    
 }
 
+const homeRoute = asyncHandler( async (req,res)=>{
+    return  res.json(
+        new ApiResponse(200,"welcome to home route",{}))
+})
+
 const registerUser = asyncHandler( async (req,res)=>{
     //to register user
     //take data from frontend
@@ -84,6 +89,7 @@ const registerUser = asyncHandler( async (req,res)=>{
     )
     
 })
+
 const loginUser = asyncHandler(async (req, res)=>{
     //steps to login
     //1. check user is registered or not?
@@ -93,20 +99,22 @@ const loginUser = asyncHandler(async (req, res)=>{
     //5. logged in 
     //6. attach refresh and access token to it
     const{email,username,password} = req.body
-    
-    const credentials = [email,password]
-   if(credentials.some((val)=> val?.trim ===""||!val)) {
-    throw new ApiError(400,"cannot send empty value of email, username or password")
-   }
+    if(!(username||email)){
+        throw new ApiError(400,"cannot send empty value")
+    }
+//     const credentials = [email,password]
+//    if(credentials.some((val)=> val?.trim ===""||!val)) {
+//     throw new ApiError(400,"cannot send empty value of email, username or password")
+//    }
    const user = await User.findOne({
     $or:[{username},{email}]
     })
     if(!user){
-        throw ApiError(404,"user not found")
+        throw new ApiError(404,"user not found")
     }
     const isPasswordCorrect = await user.isPasswordCorrect(password)
     if(!isPasswordCorrect){
-        throw ApiError(403,"password is incorrect,!try again")
+        throw new ApiError(403,"password is incorrect,!try again")
     }
 
 
@@ -123,6 +131,7 @@ const loginUser = asyncHandler(async (req, res)=>{
     .status(200)
     .cookie("accessToken",accessToken, options)
     .cookie("refreshToken",refreshToken,options)
+    
     .json(
         new ApiResponse(
             200,
@@ -156,4 +165,4 @@ const logoutUser = asyncHandler(async (req, res)=>{
     .json(new ApiResponse(200,{},"user logged out"))
 })
 
-module.exports = {registerUser,loginUser,logoutUser}
+module.exports = {registerUser,loginUser,logoutUser,homeRoute}
