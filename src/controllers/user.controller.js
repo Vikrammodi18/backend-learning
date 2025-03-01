@@ -218,39 +218,29 @@ const changeCurrentPassword = asyncHandler( async (req,res)=>{
     //verify oldPassword 
     //update newPassword
     
-    // console.log(req.cookies)
-    if(Object.keys(req.cookies).length ===0){
-        throw new ApiError(403,"unauthorised access")
-    }
-    const {oldPassword,newPassword} = req.body
-    if(!(oldPassword && newPassword)){
-        throw new ApiError(400,"password is required!")
-    }
-    if((oldPassword === newPassword)){
-        throw new ApiError(400,"oldPassword is same as newPassword! change it")
-    }
-    // const isVerifiedPassword = user.isPasswordCorrect(oldPassword)
-    // if(!isVerifiedPassword){
-    //     throw new ApiError(403,"password is incorrect")
-    // }
-    
-    const{refreshToken} = req.cookies
+    // console.log(req.user)
+    const{oldPassword, newPassword} = req.body
    
-  
-    const decodedToken = jwt.verify(req.cookies?.refreshToken,process.env.REFRESH_TOKEN_SECRET)
+    // console.log(user)
+    if(!(oldPassword&&newPassword)){
+        throw new ApiError(400,"password are required")
+    } 
+    if(oldPassword === newPassword){
+        throw new ApiError(400,"password would not be same as previous one")
+    } 
     
-    
-    const user = await User.findById(decodedToken?._id)
+    const user = await User.findById(req.user?._id) 
     if(!user){
         throw new ApiError(400,"user not found")
-    }
-    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
-    if(!isPasswordCorrect){
-        throw new ApiError(403,"password is not correct")
-    }
-
+    } 
+        
+        
+    const isVerifiedUser = await user.isPasswordCorrect(oldPassword)
+    if(!isVerifiedUser){
+        throw new ApiError(403,"password is incorrect!!")
+    } 
     user.password = newPassword
-    user.save({validateBeforeSave:false})
+    await user.save({validateBeforeSave:false})
     return res.status(200).json(
         new ApiResponse(
             200,
@@ -260,5 +250,50 @@ const changeCurrentPassword = asyncHandler( async (req,res)=>{
     )
 
 
+
+
+
+
+
+    // console.log(req.cookies)
+    // if(Object.keys(req.cookies).length ===0){
+    //     throw new ApiError(403,"unauthorised access")
+    // }
+    // const {oldPassword,newPassword} = req.body
+    // if(!(oldPassword && newPassword)){
+    //     throw new ApiError(400,"password is required!")
+    // }
+    // if((oldPassword === newPassword)){
+    //     throw new ApiError(400,"oldPassword is same as newPassword! change it")
+    // }
+   
+    // const{refreshToken} = req.cookies
+    // const decodedToken = jwt.verify(req.cookies?.refreshToken,process.env.REFRESH_TOKEN_SECRET)
+    
+    // const user = await User.findById(decodedToken?._id)
+    // if(!user){
+    //     throw new ApiError(400,"user not found")
+    // }
+    // const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+    // if(!isPasswordCorrect){
+    //     throw new ApiError(403,"password is not correct")
+    // }
+
+    // user.password = newPassword
+    // user.save({validateBeforeSave:false})
+    // return res.status(200).json(
+    //     new ApiResponse(
+    //         200,
+    //         {},
+    //         "password change successfully"
+    //     )
+    // )
+
+
 })
-module.exports = {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword}
+
+const getCurrentUser = asyncHandler(async (req,res)=>{
+    return res.status(200)
+    .json(new ApiResponse(200,req.user,"current user fetch successfully"))
+})
+module.exports = {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser}

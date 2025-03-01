@@ -1,6 +1,6 @@
 const {Router} = require("express")
 const upload = require('../middlewares/multer.middleware.js')
-const{ registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword} = require("../controllers/user.controller.js")
+const{ registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser} = require("../controllers/user.controller.js")
 const{verifyJWT} = require("../middlewares/auth.middleware.js")
 const router = Router()
 
@@ -20,5 +20,6 @@ router.route('/register').post(
 router.route('/login').post(loginUser)
 router.route('/logout').post(verifyJWT,logoutUser)
 router.route('/refreshToken').post(refreshAccessToken)
-router.route('/changePassword').post(changeCurrentPassword)
+router.route('/changePassword').post(verifyJWT,changeCurrentPassword)
+router.route('/getCurrentUser').get(verifyJWT,getCurrentUser)
 module.exports = router
