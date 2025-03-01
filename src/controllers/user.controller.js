@@ -325,6 +325,46 @@ const updateAccountDetails = asyncHandler(async (req,res)=>{
         )
     )
 })
+const updateAvatar = asyncHandler(async (req,res)=>{
+   const avatarLocalPath =  req.file?.path
+   if(!avatarLocalPath){
+    throw new ApiError(400,"avatarLocalPath is missing")
+   }
+   const avatar = uploadOnCloudinary(avatarLocalPath)
+   if(!avatar?.url){
+        throw new ApiError(400,"cloudinary file path is missing")
+   }
+   const user = User.findByIdAndUpdate(req.user?._id,
+                                    {$set:{
+                                        avatar:avatar?.url
+                                    }},
+                                    {new:true})
+                                    .select("-password -refreshToken")
+    return res.status(200)
+              .json(
+                new ApiResponse(200,user,"avatar is updated successfully")
+              )
+})
+const updateCoverImage = asyncHandler(async (req,res)=>{
+    const coverImageLocalPath =  req.file?.path
+    if(!coverImageLocalPath){
+     throw new ApiError(400,"coverImageLocalPath is missing")
+    }
+    const coverImage = uploadOnCloudinary(coverImageLocalPath)
+    if(!coverImage?.url){
+         throw new ApiError(400,"coverImage file path is missing")
+    }
+    const user = User.findByIdAndUpdate(req.user?._id,
+                                     {$set:{
+                                        coverImage:coverImage?.url
+                                     }},
+                                     {new:true})
+                                     .select("-password -refreshToken")
+     return res.status(200)
+               .json(
+                 new ApiResponse(200,user,"avatar is updated successfully")
+               )
+ })
 module.exports = {
     registerUser
     ,loginUser
@@ -333,4 +373,6 @@ module.exports = {
     ,changeCurrentPassword
     ,getCurrentUser
     ,updateAccountDetails
+    ,updateCoverImage
+    ,updateAvatar
 }
