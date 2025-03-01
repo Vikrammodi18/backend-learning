@@ -91,6 +91,7 @@ const registerUser = asyncHandler( async (req,res)=>{
     
 })
 
+//login function 
 const loginUser = asyncHandler(async (req, res)=>{
     //steps to login
     //1. check user is registered or not?
@@ -146,6 +147,7 @@ const loginUser = asyncHandler(async (req, res)=>{
 
 })
 
+//logout function to logout the user
 const logoutUser = asyncHandler(async (req, res)=>{
       await User.findByIdAndUpdate(req.user._id,
         {
