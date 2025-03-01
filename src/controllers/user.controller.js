@@ -5,6 +5,8 @@ const User = require("../models/users.model.js")
 const uploadOnCloudinary = require('../utils/cloudinary.js')
 const ApiResponse = require('../utils/apiResponse.js')
 const jwt = require("jsonwebtoken")
+
+//generating access and refresh token
 const generateAccessAndRefreshToken = async (userId)=>{
     try {
         const user = await User.findById(userId)
@@ -19,11 +21,7 @@ const generateAccessAndRefreshToken = async (userId)=>{
    
 }
 
-const homeRoute = asyncHandler( async (req,res)=>{
-    return  res.json(
-        new ApiResponse(200,"welcome to home route",{}))
-})
-
+//register user
 const registerUser = asyncHandler( async (req,res)=>{
     //to register user
     //take data from frontend
@@ -36,8 +34,8 @@ const registerUser = asyncHandler( async (req,res)=>{
     //check for user creation
     //return res
       
+    // console.log("req.body",req.body)
     const{email,username,fullName,password} = req.body
-    console.log("req.body",req.body)
    let data = [email,username,fullName,password]
     if(
        ( data.some((field)=> field?.trim===""||!field))
@@ -90,7 +88,6 @@ const registerUser = asyncHandler( async (req,res)=>{
     )
     
 })
-
 //login function 
 const loginUser = asyncHandler(async (req, res)=>{
     //steps to login
@@ -103,6 +100,9 @@ const loginUser = asyncHandler(async (req, res)=>{
     const{email,username,password} = req.body
     if(!(username||email)){
         throw new ApiError(400,"cannot send empty value")
+    }
+    if(!password){
+        throw new ApiError(400,"password is required!!")
     }
 //     const credentials = [email,password]
 //    if(credentials.some((val)=> val?.trim ===""||!val)) {
@@ -190,7 +190,7 @@ const refreshAccessToken = asyncHandler(async (req,res)=>{
          secure:true,
      }
  
-   const {accessToken,newRefreshToken}=await generateAccessAndRefreshToken(user._id)
+   const {accessToken,newRefreshToken}= await generateAccessAndRefreshToken(user._id)
  
     return res
     .status(200)
@@ -210,4 +210,55 @@ const refreshAccessToken = asyncHandler(async (req,res)=>{
 
 
 })
-module.exports = {registerUser,loginUser,logoutUser,refreshAccessToken}
+
+const changeCurrentPassword = asyncHandler( async (req,res)=>{
+    //take oldPassword and newPassword
+    //validate password
+    //check oldPassword and newPassword same or not 
+    //verify oldPassword 
+    //update newPassword
+    
+    // console.log(req.cookies)
+    if(Object.keys(req.cookies).length ===0){
+        throw new ApiError(403,"unauthorised access")
+    }
+    const {oldPassword,newPassword} = req.body
+    if(!(oldPassword && newPassword)){
+        throw new ApiError(400,"password is required!")
+    }
+    if((oldPassword === newPassword)){
+        throw new ApiError(400,"oldPassword is same as newPassword! change it")
+    }
+    // const isVerifiedPassword = user.isPasswordCorrect(oldPassword)
+    // if(!isVerifiedPassword){
+    //     throw new ApiError(403,"password is incorrect")
+    // }
+    
+    const{refreshToken} = req.cookies
+   
+  
+    const decodedToken = jwt.verify(req.cookies?.refreshToken,process.env.REFRESH_TOKEN_SECRET)
+    
+    
+    const user = await User.findById(decodedToken?._id)
+    if(!user){
+        throw new ApiError(400,"user not found")
+    }
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+    if(!isPasswordCorrect){
+        throw new ApiError(403,"password is not correct")
+    }
+
+    user.password = newPassword
+    user.save({validateBeforeSave:false})
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {},
+            "password change successfully"
+        )
+    )
+
+
+})
+module.exports = {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword}
