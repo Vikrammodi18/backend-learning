@@ -37,5 +37,5 @@ router.route('/updateAccountDetails').patch(verifyJWT,updateAccountDetails)
 router.route('/updateAvatar').post(verifyJWT,upload.single("avatar"),updateAvatar)
 router.route('/updateCoverImage').post(verifyJWT,upload.single("coverImage"),updateCoverImage)
 router.route('/c/:username').get(verifyJWT,getUserChannelProfile)
-router.route('/history').get(verifyJWT,getWatchHistory)
+router.route('/history').get(verifyJWT,getWatchedHistory)
 module.exports = router

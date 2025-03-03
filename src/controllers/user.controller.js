@@ -99,7 +99,7 @@ const loginUser = asyncHandler(async (req, res)=>{
     //6. attach refresh and access token to it
     const{email,username,password} = req.body
     if(!(username||email)){
-        throw new ApiError(400,"cannot send empty value")
+        throw new ApiError(400,"email or username can't be empty")
     }
     if(!password){
         throw new ApiError(400,"password is required!!")
@@ -150,8 +150,8 @@ const loginUser = asyncHandler(async (req, res)=>{
 //logout function to logout the user
 const logoutUser = asyncHandler(async (req, res)=>{
       await User.findByIdAndUpdate(req.user._id,
-        {
-            refreshToken: undefined
+        { 
+          $set:{refreshToken: null} 
         },
         {
             new:true
@@ -161,6 +161,7 @@ const logoutUser = asyncHandler(async (req, res)=>{
         httpOnly: true,
         secure:true
     }
+
     return res
     .status(200)
     .clearCookie("accessToken",options)
@@ -325,26 +326,28 @@ const updateAccountDetails = asyncHandler(async (req,res)=>{
         )
     )
 })
+
 const updateAvatar = asyncHandler(async (req,res)=>{
    const avatarLocalPath =  req.file?.path
    if(!avatarLocalPath){
     throw new ApiError(400,"avatarLocalPath is missing")
    }
-   const avatar = uploadOnCloudinary(avatarLocalPath)
+   const avatar = await uploadOnCloudinary(avatarLocalPath)
    if(!avatar?.url){
         throw new ApiError(400,"cloudinary file path is missing")
    }
-   const user = User.findByIdAndUpdate(req.user?._id,
+   const user = await User.findByIdAndUpdate(req.user?._id,
                                     {$set:{
                                         avatar:avatar?.url
                                     }},
                                     {new:true})
-                                    .select("-password -refreshToken")
+                                    .select("-password")
     return res.status(200)
               .json(
                 new ApiResponse(200,user,"avatar is updated successfully")
               )
 })
+
 const updateCoverImage = asyncHandler(async (req,res)=>{
     const coverImageLocalPath =  req.file?.path
     if(!coverImageLocalPath){
@@ -395,8 +398,8 @@ const updateCoverImage = asyncHandler(async (req,res)=>{
             }
         },
         {
-            $addfields:{
-                subscribersCound:{
+            $addFields:{
+                subscribersCount:{
                     $size:"$subscribers"
                 },
                 channelsSubscribedToCount:{
@@ -424,12 +427,13 @@ const updateCoverImage = asyncHandler(async (req,res)=>{
             }
         }
     ])
+   
     if(!channel?.length){
         throw new ApiError(404,"channel does not exists")
     }
     return res
-    .status(200),
-    json(
+    .status(200)
+    .json(
         new ApiResponse(200, channel[0],"user channel fetched successfully" )
     )
  })
