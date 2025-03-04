@@ -115,7 +115,42 @@ const getVideoById = asyncHandler(async (req,res)=>{
                     new ApiResponse(200,video[0],"video is fetched successfully")
                 )
 })
+const updateVideo = asyncHandler(async (req,res)=>{
+    const {videoId} = req.params;
+    console.log(videoId)
+    const{description,title} = req.body;
+    
+    if(!videoId){
+        throw new ApiError(402,"videoId can't be empty") 
+    }
+    console.log(req.file.path)
+    const thumbnailPath = req.file?.path
+    if(!thumbnailPath){
+        throw new ApiError(402,"thumbnail did not uploaded") 
+    }
+    
+    const responseThumbnail = await uploadOnCloudinary(thumbnailPath)
+    if(!responseThumbnail){
+        throw new ApiError(401,"something went wrong at cloud while uploading")
+    }
+    const video = await Video.findById(videoId)
+    if(!video){
+        throw new ApiError(402,"video is not available") 
+    }
+    video.description = description;
+    video.title = title;
+    video.thumbnail = responseThumbnail?.url;
+    await video.save()
+    return res.status(200)
+              .json(
+                new ApiResponse(200,
+                    {},"updated successfully"
+                )
+              )
+    
+})
 module.exports = {
     videoUpload,
     getVideoById,
+    updateVideo,
 }

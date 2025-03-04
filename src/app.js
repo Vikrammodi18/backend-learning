@@ -15,7 +15,8 @@ app.use(cookieParser())
 
 const userRouter = require("./routes/user.routes.js")
 const videoRouter = require("./routes/video.routes.js")
-app.use("/api/v1/users", userRouter)
-app.use("/api/v1/videos",videoRouter)
 //http://localhost:3000/api/v1/users/register
+app.use("/api/v1/users", userRouter)
+//http://localhost:3000/api/v1/videos
+app.use("/api/v1/videos",videoRouter)
 module.exports = app
