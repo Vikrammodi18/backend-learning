@@ -1,5 +1,5 @@
 const {mongoose,Schema }= require("mongoose")
-const mongooseAggregatePaginate = require(" mongoose-aggregate-paginate-v2")
+const mongooseAggregatePaginate = require("mongoose-aggregate-paginate-v2")
 
 const videoSchema = Schema({
     videoUrl:{
@@ -11,11 +11,11 @@ const videoSchema = Schema({
         required:true,
     },
     title:{
-        type:String, //cloudinary url
+        type:String, 
         required:true,
     },
     description:{
-        type:String, //cloudinary url
+        type:String, 
         required:true,
     },
     duration:{

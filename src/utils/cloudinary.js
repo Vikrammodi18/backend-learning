@@ -13,7 +13,7 @@ const uploadOnCloudinary = async (localFilePath)=>{
        const response = await cloudinary.uploader.upload(localFilePath,{
             resource_type: "auto"
         })
-        console.log("response:",response)
+        // console.log("response:",response)
         fs.unlinkSync(localFilePath)
         //file has been uploaded successfull
         // console.log("file is uploaded on cloudinary",response.url)
@@ -23,6 +23,31 @@ const uploadOnCloudinary = async (localFilePath)=>{
         return null
     }
 }
+const uploadVideoOnCloudinary = async(localFilePath)=>{
+    try {
+        if(!localFilePath) return null
+      const response = await new Promise((resolve,reject)=>{
+            cloudinary.uploader.upload_large(localFilePath,{
+                 resource_type:"video",
+                 chunk_size:10000000
+
+        },(error,result)=>{
+            if(error){
+                reject(error)
+            }
+            resolve(result)
+        });
+      })
+        fs.unlinkSync(localFilePath)
+        return response
+    } catch (error) {
+        fs.unlinkSync(localFilePath) //remove the locally saved temporary file as the upload operation got failed
+        return null
+    }
+}
 
 
-module.exports = uploadOnCloudinary
+module.exports = {
+    uploadOnCloudinary,
+    uploadVideoOnCloudinary,
+}
