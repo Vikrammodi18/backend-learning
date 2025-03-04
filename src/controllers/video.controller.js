@@ -117,34 +117,42 @@ const getVideoById = asyncHandler(async (req,res)=>{
 })
 const updateVideo = asyncHandler(async (req,res)=>{
     const {videoId} = req.params;
-    console.log(videoId)
+    
     const{description,title} = req.body;
     
     if(!videoId){
         throw new ApiError(402,"videoId can't be empty") 
     }
-    console.log(req.file.path)
-    const thumbnailPath = req.file?.path
-    if(!thumbnailPath){
-        throw new ApiError(402,"thumbnail did not uploaded") 
+    let responseThumbnail;
+    console.log(req.file?.path)
+    if(!req.file?.path){
+        responseThumbnail = await uploadOnCloudinary(req.file?.path)
     }
+    const existedVideo = await Video.findById(req.params?.videoId).select("title thumbnail description")
+    console.log(existedVideo)
+    if(!existedVideo){
+        throw new ApiError(404,"video does not exist")
+    }
+    const video = await Video.findByIdAndUpdate(videoId,
+        {
+            $set:
+            {
+                description: description || existedVideo.description,
+                title:title||existedVideo.title,
+                thumbnail: responseThumbnail?.url || existedVideo.thumbnail
+            },
     
-    const responseThumbnail = await uploadOnCloudinary(thumbnailPath)
-    if(!responseThumbnail){
-        throw new ApiError(401,"something went wrong at cloud while uploading")
-    }
-    const video = await Video.findById(videoId)
+        },{new:true}).select("videoUrl thumbnail title description ")
+        console.log(video)
     if(!video){
         throw new ApiError(402,"video is not available") 
     }
-    video.description = description;
-    video.title = title;
-    video.thumbnail = responseThumbnail?.url;
-    await video.save()
+  
+
     return res.status(200)
               .json(
                 new ApiResponse(200,
-                    {},"updated successfully"
+                    video,"updated successfully"
                 )
               )
     
