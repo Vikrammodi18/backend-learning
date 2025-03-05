@@ -1,9 +1,10 @@
 const Video = require("../models/videos.model")
 const asyncHandler = require('../utils/asyncHandler.js')
 const ApiError = require('../utils/apiError.js')
-const mongoose = require("mongoose")
+const {mongoose,isValidObjectId} = require("mongoose")
 const ApiResponse = require('../utils/apiResponse.js')
-const {uploadOnCloudinary,uploadVideoOnCloudinary} = require('../utils/cloudinary.js')
+const {uploadOnCloudinary,uploadVideoOnCloudinary,deleteVideoOnCloudinary} = require('../utils/cloudinary.js')
+const { findByIdAndDelete } = require("../models/users.model.js")
 
 const videoUpload = asyncHandler(async (req,res)=>{
     const{description,title} = req.body
@@ -54,7 +55,6 @@ const videoUpload = asyncHandler(async (req,res)=>{
 
 //    })
 })
-
 const getVideoById = asyncHandler(async (req,res)=>{
     const{videoId} = req.params
     if(!videoId){
@@ -98,6 +98,7 @@ const getVideoById = asyncHandler(async (req,res)=>{
             totalComments:1,
             videoUrl:1,
             title:1,
+            views:1,
             thumbnail:1,
             description:1,
             owner:1,
@@ -157,8 +158,94 @@ const updateVideo = asyncHandler(async (req,res)=>{
               )
     
 })
+const getAllVideos = asyncHandler(async (req,res)=>{
+    try {
+        const{ page = 1,
+            limit = 10,
+            sortBy,
+            sortType,
+            
+        } = req.query
+        //build sort objec
+        const sortObject = {}
+        sortObject[sortBy] = sortType === "desc"? -1 :1;
+        
+        
+        //get total count for pagination
+        const totalVideo = await Video.countDocuments({})
+        console.log("inside get all videos")
+         
+ 
+         // Get paginated videos with owner details 
+         const video = await Video.aggregate([
+             {
+                 $lookup:{
+                     from:"users",
+                     localField:"owner",
+                     foreignField:"_id",
+                     as:"owner",
+                     pipeline:[
+                         {
+                             $project:{
+                                 username:1,
+                                 fullName:1,
+                                 avatar:1
+                             }
+                         }
+                     ]
+                 }
+             },
+             {$unwind:"$owner"},
+             {$sort: sortObject},
+             {$skip:(Number(page)-1)*Number(limit)},
+             {$limit: Number(limit)}
+         ]);
+ 
+     const totalPages = Math.ceil(totalVideo/ Number(limit))
+     
+     
+     res.status(200).json(
+         new ApiResponse(200,{
+             video,
+             pagination:{
+                 page:Number(page),
+                 limit: Number(limit),
+                 totalPages,
+                 totalVideo,
+                 hasNextPage: Number(page)<totalPages,
+                 hasPrevPage:Number(page)>1
+             },
+         },"videos fetched successfully")
+     )
+     
+   } catch (error) {
+    throw new ApiError(500, "Failed to fetch videos")
+   }
+
+
+})
+const deleteVideo = asyncHandler(async (req,res)=>{
+    const{videoId} = req.params
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(402,"Invalid Video Id")
+    }
+    if(!videoId){
+        throw new ApiError(400,"video Id is required")
+    }
+    const response = await findByIdAndDelete(videoId)
+    await deleteVideoOnCloudinary(response.videoUrl)
+    if(!response){
+        throw new ApiError(500,"video did not delete")
+    }
+    return res.status(200)
+            .json(
+                new ApiResponse(200,{},"video deleted successfully")
+            )
+})
 module.exports = {
     videoUpload,
     getVideoById,
     updateVideo,
+    getAllVideos,
+    deleteVideo,
 }

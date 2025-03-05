@@ -45,9 +45,19 @@ const uploadVideoOnCloudinary = async(localFilePath)=>{
         return null
     }
 }
-
+const deleteVideoOnCloudinary = async (fileUrl)=>{
+    try {
+        if (!fileUrl) return null;
+        const fileName =  fileUrl.split("/").slice(-1).join("").replace(".mp4","")
+        // console.log(fileName)
+        const response = await cloudinary.uploader.destroy(fileName,{resource_type:"video"})
+    } catch (error) {
+        throw new ApiError(500,error.message || "unable to delete")
+    }
+}
 
 module.exports = {
     uploadOnCloudinary,
     uploadVideoOnCloudinary,
+    deleteVideoOnCloudinary,
 }
