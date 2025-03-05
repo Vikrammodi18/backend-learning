@@ -140,7 +140,8 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                 subscribedChannel:1
             }
         },
-        {addfields:
+        {
+            $addFields:
             {
                 subscribedChannel: {$first: "$subscribedChannel"}
             }}
