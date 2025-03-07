@@ -173,7 +173,7 @@ const getAllVideos = asyncHandler(async (req,res)=>{
         
         //get total count for pagination
         const totalVideo = await Video.countDocuments({})
-        console.log("inside get all videos")
+       
          
  
          // Get paginated videos with owner details 

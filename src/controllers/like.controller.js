@@ -3,6 +3,7 @@ const {mongoose,isValidObjectId}= require("mongoose")
 const ApiError = require('../utils/apiError.js')
 const ApiResponse = require('../utils/apiResponse.js')
 const asyncHandler = require("../utils/asyncHandler.js")
+const { findOne, deleteOne } = require("../models/users.model.js")
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
     //check video id
@@ -53,7 +54,138 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         )
     }
 })
+const toggleCommentLike = asyncHandler(async (req, res) => {
+   
+     const {commentId} = req.params
+     //TODO: toggle like on comment
+     if(!commentId){
+         throw new ApiError(400,"comment Id is required")
+     }
+     
+     if(!isValidObjectId(commentId)){
+         throw new ApiError(400,"invalid comment id")
+     }
+     const likedBy = req.user?._id
+     const isCommentLiked = await Like.findOne({likedBy,comment:new mongoose.Types.ObjectId(commentId)})
+     if(isCommentLiked){
+         await Like.deleteOne({likedBy,comment:new mongoose.Types.ObjectId(commentId)})
+         return res
+             .status(200)
+             .json(
+                 new ApiResponse(
+                     200,
+                     {},
+                     "dislike comment"
+                 )
+             )
+     }else{
+         const commentLike = await Like.create(
+             {
+                 likedBy,
+                 comment: new mongoose.Types.ObjectId(commentId)
+             }
+         )
+     if(!commentLike){
+         throw new ApiError(400,"something went wrong to like a comment")
+     }
+     return res
+         .status(200).json(
+             new ApiResponse(200,{},"liked a comment")
+         )
+     }
+   
+})
+const toggleTweetLike = asyncHandler(async (req, res) => {
+    const {tweetId} = req.params
+    //TODO: toggle like on tweet
+    if(!tweetId){
+        new ApiError(400,"tweetId is required")
+    }
+    if(!isValidObjectId(tweetId)){
+        new ApiError(400,"tweetId is required")
+    }
+    const likedBy = req?.user?._id
+    if(!likedBy){
+        new ApiError(400,"tweetId is required")
+    }
 
+    const isTweetLike = await Like.findOne({likedBy,tweet:tweetId})
+    
+    if(isTweetLike){
+        await Like.deleteOne({likedBy,toggleTweetLike})
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "dislike tweet"
+            )
+        )
+    }else{
+        const tweetLike = await Like.create({likedBy,tweet:tweetId})
+        if(!tweetLike){
+            throw new ApiError(500,"unable to like a tweet now")
+        }
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200,{tweetLike},"like a tweet")
+        )
+    }
+}
+)
+const getLikedVideos = asyncHandler(async (req, res) => {
+    //TODO: get all liked videos
+    const likedBy = req.user?._id
+    if(!likedBy){
+        throw new ApiError(403,"user must logged in")
+    }
+    const likedVideos = await Like.aggregate([
+        {
+            $match:{
+               likedBy:likedBy,
+               video:{$exists: true,$ne:null}
+            }
+        },
+        {
+            $lookup:{
+                from:"videos",
+                localField:"video",
+                foreignField:"_id",
+                as:"videoDetails"
+            }
+        },
+        
+        {
+            $project:{
+                videoDetails: {$arrayElemAt:["$videoDetails",0]}
+            }
+        },
+        {
+            $project:{
+                videoUrl:"$videoDetails.videoUrl",
+                views:"$videoDetails.duration",
+                title:"$videoDetails.title",
+                views:"$videoDetails.views",
+                duration:"$videoDetails.duration",
+            }
+        }
+    ])
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                likedVideos,
+                "videos details fetched successfully"
+            )
+        )
+})
 module.exports = {
     toggleVideoLike,
+    toggleCommentLike,
+    toggleTweetLike,
+    getLikedVideos
 }
