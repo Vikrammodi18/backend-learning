@@ -7,6 +7,8 @@ const {mongoose,isValidObjectId} = require("mongoose")
 const getVideoComments = asyncHandler(async (req, res) => {
     //TODO: get all comments for a video
     const {page = 1, limit = 10} = req.query
+    // page = parseInt(page)
+    // limit = parseInt(limit)
     if(page<1){
         throw new ApiError(400,"page start from 1")
     }
@@ -17,6 +19,9 @@ const getVideoComments = asyncHandler(async (req, res) => {
     if(!isValidObjectId(videoId)){
         throw new ApiError(400,"videoId are required")
     }
+    const totalComments = await Comment.countDocuments({
+        video: new mongoose.Types.ObjectId(videoId),
+      });
     const comments = await Comment.aggregate([
          {
             $match:{
@@ -41,11 +46,6 @@ const getVideoComments = asyncHandler(async (req, res) => {
             }
          },
          {
-           $set:{
-                owner:{$arrayElemAt:["$owner",0]}
-           }
-         },
-         {
             $lookup:{
                 from:"likes",
                 localField:"_id",
@@ -55,7 +55,9 @@ const getVideoComments = asyncHandler(async (req, res) => {
          },
          {
             $addFields:{
-                numberOfLikes:{$size:"$likedComment"}
+                ownerDetals:{$arrayElemAt:["$ownerDetails",0]},
+                numberOfLikes:{$size:"$likedComment"},
+
             }
          },
          {
@@ -64,12 +66,21 @@ const getVideoComments = asyncHandler(async (req, res) => {
                 owner:1,
                 numberOfLikes:1
             }
+         },
+         {
+            $skip:(page-1)*limit
+         },
+         {
+            $limit:parseInt(limit)
          }
     ])
     return res
         .status(200)
         .json(
-            new ApiResponse(200,comments,"comments fetched successfully")
+            new ApiResponse(200,
+               { comments,
+                totalComments:totalComments,},
+                "comments fetched successfully")
         )
 })
 
@@ -146,9 +157,34 @@ const updateComment = asyncHandler(async (req, res) => {
             new ApiResponse(200,comment,"successfully comment update:")
         )
 })
+const deleteComment = asyncHandler(async (req, res) => {
+    // TODO: delete a comment
+    const{commentId} = req.params
+    if(!commentId){
+        throw new ApiError(400,"comment Id is required")
+    }
+    if(!isValidObjectId(commentId)){
+        throw new ApiError(400,"comment Id is required")
+    }
+    await Comment.deleteOne(
+        {
+            owner:req.user?._id,
+            _id: new mongoose.Types.ObjectId(commentId)
+        }
+    )
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "comment deleted successfully!!"
+            )
+        )
+})
 module.exports = {
     getVideoComments,
     addComment,
-    updateComment
-
+    updateComment,
+    deleteComment
 }
