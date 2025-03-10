@@ -55,6 +55,40 @@ const videoUpload = asyncHandler(async (req,res)=>{
 
 //    })
 })
+
+const getAllVideosById = asyncHandler(async (req,res)=>{
+    //user id will be taken from authentication
+    //get all video published by user
+    
+    const allVideos = await Video.aggregate([
+        
+            {
+              $match:{
+                owner: req.user?._id
+              }
+            },
+            {
+              $project:{
+                title:1,
+                _id:1,
+                thumbnail:1,
+              }
+            },
+            {
+                $skip:Number()
+            }
+          ])
+          return res
+          .status(200)
+          .json(
+            new ApiResponse(
+                200,
+                allVideos,
+                "all video fetched successfully"
+            )
+          )
+
+})
 const getVideoById = asyncHandler(async (req,res)=>{
     const{videoId} = req.params
     if(!videoId){
@@ -248,4 +282,5 @@ module.exports = {
     updateVideo,
     getAllVideos,
     deleteVideo,
+    getAllVideosById
 }

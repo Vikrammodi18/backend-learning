@@ -2,7 +2,7 @@ const {Router} = require("express")
 const {verifyJWT} = require("../middlewares/auth.middleware.js")
 const upload = require('../middlewares/multer.middleware.js')
 const router = Router()
-const {videoUpload,getVideoById,updateVideo,getAllVideos,deleteVideo} = require('../controllers/video.controller.js')
+const {videoUpload,getVideoById,updateVideo,getAllVideos,deleteVideo,getAllVideosById} = require('../controllers/video.controller.js')
 
 router.route('/videoUpload').post(verifyJWT,upload.fields([
                                                     {
@@ -15,7 +15,8 @@ router.route('/videoUpload').post(verifyJWT,upload.fields([
                                                     }
                                                 ]),
                                                 videoUpload)
-                                                
+
+router.route('/').get(verifyJWT,getAllVideosById)
 router.route('/:videoId/updateVideo').patch(verifyJWT,upload.single("thumbnail"),updateVideo)
 router.route('/:videoId/getVideo').get(verifyJWT,getVideoById)
 router.route("/getAllVideo").get(getAllVideos)
