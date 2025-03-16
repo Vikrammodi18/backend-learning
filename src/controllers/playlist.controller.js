@@ -33,7 +33,27 @@ const createPlaylist = asyncHandler(async (req, res) => {
     )
    )
 })
-
+const getUserPlaylists = asyncHandler(async (req, res) => {
+    const {userId} = req.params
+    //TODO: get user playlists
+    if(!isValidObjectId(userId)){
+        throw new ApiError(400,"valid user Id is required!!")
+    }
+    const allPlaylist = await Playlist.findOne({owner:userId}).populate("videos")
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            allPlaylist,
+            "all playlist fetched:"
+        )
+    )
+})
+const getPlaylistById = asyncHandler(async (req, res) => {
+    const {playlistId} = req.params
+    //TODO: get playlist by id
+})
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
     //get playlistId and videoId
     //validate playlistId and videoId
@@ -81,4 +101,5 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
 module.exports = {
     createPlaylist,
     addVideoToPlaylist,
+    getUserPlaylists,
 }
